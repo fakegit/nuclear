@@ -18,7 +18,7 @@ type AddAllButtonProps = {
   t: TFunction;
 }
 
-const AddAllButton: React.FC<AddAllButtonProps> = ({
+export const AddAllButton: React.FC<AddAllButtonProps> = ({
   handleAddAll,
   t
 }) => {
@@ -35,11 +35,13 @@ const AddAllButton: React.FC<AddAllButtonProps> = ({
   );
 };
 
+type PopularTrack = Track & { thumb?: string };
+
 type PopularTracksProps = {
   artist: {
     name: string;
   };
-  tracks: Track[];
+  tracks: PopularTrack[];
   addToQueue: (track) => Promise<void> ;
 }
 
