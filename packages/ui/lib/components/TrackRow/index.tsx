@@ -7,27 +7,15 @@ import _ from 'lodash';
 import artPlaceholder from '../../../resources/media/art_placeholder.png';
 // eslint-disable-next-line node/no-missing-import
 import { formatDuration } from '../../utils';
+import { Track } from '../../types';
 import styles from './styles.scss';
 
-const getTrackThumbnail = track => {
-  return _.get(
-    track,
-    'thumbnail',
-    _.get(track, 'image[0][#text]')
-  );
+export const getTrackThumbnail = track => {
+  return track.thumbnail ?? track.image?.[0]?.['#text'] ?? track.thumb;
 };
 
-type TrackRowProps = {
-  track: {
-    local?: boolean;
-    album?: string;
-    artist?: {name: string} | string;
-    duration?: number | string;
-    position?: number;
-    playcount?: number | string;
-    name: string;
-    thumbnail?: any;
-  };
+export type TrackRowProps = {
+  track: Partial<Track>;
 
   mini?: boolean;
 
@@ -92,7 +80,7 @@ const TrackRow: React.FC<TrackRowProps> = ({
     }
     {
       displayArtist &&
-      <td className={styles.track_row_artist}>
+      <td>
         { 
           _.isString(track.artist) 
             ? track.artist
@@ -100,12 +88,12 @@ const TrackRow: React.FC<TrackRowProps> = ({
         }
       </td>
     }
-    <td className={styles.track_row_name}>
-      { track.name }
+    <td>
+      { track.title ?? track.name }
     </td>
     {
       displayAlbum &&
-      <td className={styles.track_row_album}>
+      <td>
         { track.album }
       </td>
     }
@@ -117,7 +105,7 @@ const TrackRow: React.FC<TrackRowProps> = ({
     }
     {
       displayPlayCount &&
-      <td className={styles.track_row_playcount}>
+      <td>
         { numeral(track.playcount).format('0,0') }
       </td>
     }

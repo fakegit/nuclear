@@ -2,16 +2,14 @@ module.exports = {
   app: {
     getPath: () => { }
   },
-  remote: {
-    transformSource: () => { },
-    app: {
-      getPath: () => { }
-    },
-    dialog: {
-      showOpenDialog: jest.fn(async () => Promise.resolve({
-        canceled: false,
-        filePaths: ['test file.txt']
-      }))
-    }
+  shell: {
+    openExternal: jest.fn(async (link) => Promise.resolve({
+      link
+    }))
+  },
+  clipboard: {
+    writeText: jest.fn(async (text) => Promise.resolve({
+      text
+    }))
   }
 };

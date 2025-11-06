@@ -7,9 +7,9 @@ Lettore musicale desktop incentrato sullo streaming da fonti gratuite
 
 # Links
 
-[Sito Ufficiale](https://nuclear.js.org)
+[Sito Ufficiale](https://nuclearplayer.com)
 
-[Mastodon](https://mstdn.io/@nuclear)
+[Mastodon](https://fosstodon.org/@nuclearplayer)
 
 [Twitter](https://twitter.com/nuclear_player)
 
@@ -19,12 +19,14 @@ Canale Discord: https://discord.gg/JqPjKxE
 
 Traduzione Documentazione: 
 
-<kbd>[<img title="Deutsch" alt="Deutsch" src="https://cdn.staticaly.com/gh/hjnilsson/country-flags/master/svg/de.svg" width="22">](docs/README-de.md)</kbd>
-<kbd>[<img title="Português" alt="Português" src="https://cdn.staticaly.com/gh/hjnilsson/country-flags/master/svg/br.svg" width="22">](README-ptbr.md)</kbd>
-<kbd>[<img title="Svenska" alt="Svenska" src="https://cdn.staticaly.com/gh/hjnilsson/country-flags/master/svg/se.svg" width="22">](README-se.md)</kbd>
-<kbd>[<img title="English" alt="English" src="https://cdn.staticaly.com/gh/hjnilsson/country-flags/master/svg/us.svg" width="22">](../README.md)</kbd>
-<kbd>[<img title="Hebrew" alt="Hebrew" src="https://cdn.staticaly.com/gh/hjnilsson/country-flags/master/svg/il.svg" width="22">](README-he.md)</kbd>
-<kbd>[<img title="Italiano" alt="Italiano" src="https://cdn.staticaly.com/gh/hjnilsson/country-flags/master/svg/it.svg" width="22">](README-it.md)</kbd>
+<kbd>[<img title="Deutsch" alt="Deutsch" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/de.svg" width="22">](docs/README-de.md)</kbd>
+<kbd>[<img title="Português" alt="Português" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/br.svg" width="22">](README-ptbr.md)</kbd>
+<kbd>[<img title="Svenska" alt="Svenska" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/se.svg" width="22">](README-se.md)</kbd>
+<kbd>[<img title="English" alt="English" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/us.svg" width="22">](../README.md)</kbd>
+<kbd>[<img title="Hebrew" alt="Hebrew" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/il.svg" width="22">](README-he.md)</kbd>
+<kbd>[<img title="Italiano" alt="Italiano" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/it.svg" width="22">](README-it.md)</kbd>
+<kbd>[<img title="Indonesia" alt="Indonesia" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/id.svg" width="22">](docs/README-id.md)</kbd>
+<kbd>[<img title="Français" alt="Français" src="https://cdn.statically.io/gh/hjnilsson/country-flags/master/svg/fr.svg" width="22">](docs/README-fr.md)</kbd>
 
 ## Cos'è Nuclear?
 Nuclear è un programma di streaming musicale gratuito che estrae contenuti da fonti gratuite su Internet.
@@ -62,13 +64,14 @@ https://nuclearmusic.rtfd.io/
 
 Di seguito è riportato un elenco di pacchetti dei vari gestori, la maggior parte dei quali sono gestiti da parti terze. Vorremmo ringraziare i manutentori per il loro lavoro.
 
-| Package type   | Link                                                    | Maintainer                                    |
-|:--------------:|:-------------------------------------------------------:|:---------------------------------------------:|
-| AUR (Arch)     | https://aur.archlinux.org/packages/nuclear-player-bin/  | [mikelpint](https://github.com/mikelpint)     |
-| Choco (Win)    | https://chocolatey.org/packages/nuclear/                | [JourneyOver](https://github.com/JourneyOver) |
-| Homebrew (Mac) | https://formulae.brew.sh/cask/nuclear                   | Homebrew                                      |
-| Snap           | https://snapcraft.io/nuclear                            | [nukeop](https://github.com/nukeop)           |
-| Flatpak        | https://flathub.org/apps/details/org.js.nuclear.Nuclear | [advaithm](https://github.com/advaithm)       |
+| Package type   | Link                                                               | Maintainer                                    |
+|:--------------:|:------------------------------------------------------------------:|:---------------------------------------------:|
+| AUR (Arch)     | https://aur.archlinux.org/packages/nuclear-player-bin/             | [mikelpint](https://github.com/mikelpint)     |
+| Choco (Win)    | https://chocolatey.org/packages/nuclear/                           | [JourneyOver](https://github.com/JourneyOver) |
+| GURU (Gentoo)  | https://github.com/gentoo/guru/tree/master/media-sound/nuclear-bin | [scardracs](https://github.com/scardracs)     |
+| Homebrew (Mac) | https://formulae.brew.sh/cask/nuclear                              | Homebrew                                      |
+| Snap           | https://snapcraft.io/nuclear                                       | [nukeop](https://github.com/nukeop)           |
+| Flatpak        | https://flathub.org/apps/details/org.js.nuclear.Nuclear            | [advaithm](https://github.com/advaithm)       |
 
 Grazie mille a [ayyeve](https://github.com/ayyEve) per avermi (advaithm) permesso di usare il suo server come macchina di compilazione.
 ## Traduzioni
@@ -86,12 +89,12 @@ Nuclear è già stato tradotto in diverse lingue e siamo sempre alla ricerca di 
 | Russian              | [ramstore07](https://github.com/ramstore07), [dmtrshat](https://github.com/dmtrshat)                 |
 | Brazilian Portuguese | [JoaoPedroMoraes](https://github.com/JoaoPedroMoraes)                                                |
 | Turkish              | [3DShark](https://github.com/3DShark)                                                                |
-| Italian              | [gello94](https://github.com/gello94)                                                                |
+| Italian              | [gello94](https://github.com/gello94), [scardracs](https://github.com/scardracs)                     |
 | Slovak               | [MartinT](https://github.com/MartinTuroci)                                                           |
 | Czech                | [PetrTodorov](https://github.com/PetrTodorov)                                                        |
 | Tagalog              | [giftofgrub](https://github.com/giftofgrub)                                                          |
 | Traditional Chinese  | [oxygen-TW](https://github.com/oxygen-TW)                                                            |
-| Swedish              | [PalleKarlsson](https://github.com/PalleKarlsson)                                                    |
+| Swedish              | [PalleKarlsson](https://github.com/PalleKarlsson), [nonew-star](https://github.com/nonew-star)       |
 | Greek                | [Shuin-San](https://github.com/Shuin-San)                                                            |
 
 ## Processo di sviluppo
@@ -141,23 +144,28 @@ $ flatpak-builder --run build-dir org.js.nuclear.Nuclear.json run.sh
 Puoi trasformare l'app in un repository locale. attualmente il file crea l'ultima versione.
 
 ## Screenshots
-Questo verrà aggiornato man mano che il programma si evolve.
 
-![Ricerca Album](https://i.imgur.com/idFVnAF.png)
+![Default](../screenshots/screenshot_default.jpg)
 
-![Mostra Album](https://i.imgur.com/Kvzo3q7.png)
+![Dashboard](../screenshots/screenshot_dashboard.jpg)
 
-![Vedi Artista](https://i.imgur.com/imBLYl3.png)
+![Album](../screenshots/screenshot_album.jpg)
 
-![Pannello di controllo Recenti brani migliori](https://i.imgur.com/bMDrR4M.png)
+![Artist](../screenshots/screenshot_artist.jpg)
 
-![Pannello di controllo Generi](https://i.imgur.com/g0aCmKx.png)
+![Search](../screenshots/screenshot_search.jpg)
 
-![Vedi Playlists](https://i.imgur.com/2VMXHDC.png)
+![Command palette](../screenshots/screenshot_command_palette.jpg)
 
-![Vedi Lyrics](https://i.imgur.com/7e3DJKJ.png)
+![Equalizer](../screenshots/screenshot_equalizer.jpg)
 
-![Vedi Equalizzatore](https://i.imgur.com/WreRL0w.png)
+![Genres](../screenshots/screenshot_genres.jpg)
+
+![Playlist](../screenshots/screenshot_playlist.jpg)
+
+![Settings](../screenshots/screenshot_settings.jpg)
+
+![Visualizer](../screenshots/screenshot_visualizer.jpg)
 
 ## Licenza
 

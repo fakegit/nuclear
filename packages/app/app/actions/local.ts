@@ -1,6 +1,7 @@
 import { createAction } from 'redux-actions';
-import { remote } from 'electron';
+import { ipcRenderer } from 'electron';
 import { LIST_TYPE } from '@nuclear/ui/lib/components/LibraryListTypeToggle';
+import { IpcEvents } from '@nuclear/core';
 
 import { LocalLibrary } from './actionTypes';
 import { VoidAction } from './helpers';
@@ -21,10 +22,11 @@ export enum LocalLibraryKeyNames {
   ScanTotal = 'scanTotal'
 }
 
+
 export class LocalLibraryState {
   [LocalLibraryKeyNames.Pending] = false;
   [LocalLibraryKeyNames.Error] = false;
-  [LocalLibraryKeyNames.Folders] = [];
+  [LocalLibraryKeyNames.Folders]: string[] = [];
   [LocalLibraryKeyNames.Page] = 0;
   [LocalLibraryKeyNames.SortBy] = 'artist';
   [LocalLibraryKeyNames.Direction] = 'ascending';
@@ -41,9 +43,12 @@ export const localLibraryActions = {
   removeLocalFolder: createAction(LocalLibrary.REMOVE_LOCAL_FOLDER, (folder: string[]) => folder),
   scanLocalFolders: VoidAction(LocalLibrary.SCAN_LOCAL_FOLDERS),
   scanLocalFoldersProgress: createAction(LocalLibrary.SCAN_LOCAL_FOLDERS_PROGRESS, (scanProgress: number, scanTotal: number) => ({ scanProgress, scanTotal })),
-  scanLocalFoldersSuccess: createAction(LocalLibrary.SCAN_LOCAL_FOLDERS_SUCCESS, (payload: Track[]) => payload),
+  scanLocalFoldersSuccess: createAction(LocalLibrary.SCAN_LOCAL_FOLDERS_SUCCESS, (payload: Track[]) => {
+    const tracks = Array.isArray(payload) ? payload : Object.values(payload);
+    return tracks;
+  }),
   scanLocalFoldersFailure: VoidAction(LocalLibrary.SCAN_LOCAL_FOLDERS_FAILURE),
-  updateFilter: createAction(LocalLibrary.UPDATE_LOCAL_FILTER, (event: { target: { value: string }}) => ({ filter: event.target.value })),
+  updateFilter: createAction(LocalLibrary.UPDATE_LOCAL_FILTER, (event: { target: { value: string } }) => ({ filter: event.target.value })),
   updateLocalSort: createAction(LocalLibrary.UPDATE_LOCAL_SORT, (sortBy, column, direction) => ({
     sortBy,
     direction: column !== sortBy
@@ -75,10 +80,26 @@ export function addLocalFolders(folders) {
 }
 
 export const openLocalFolderPicker = () => async dispatch => {
-  let folders = await (await remote.dialog.showOpenDialog(remote.getCurrentWindow(), { properties: ['openDirectory', 'multiSelections'] })).filePaths;
-  if (folders) {
+  const filePaths = await ipcRenderer.invoke(IpcEvents.OPEN_PATH_PICKER, {
+    properties: ['openDirectory', 'multiSelections']
+  });
+  
+  if (filePaths) {
     // normalize path-seps (gets normalized on save to disk, but must happen from start for some UI code)
-    folders = folders.map(path => path.replace(/\\/g, '/'));
-    dispatch(addLocalFolders(folders));
+    const normalizedPaths = filePaths.map(path => path.replace(/\\/g, '/'));
+    dispatch(addLocalFolders(normalizedPaths));
+  }
+};
+
+export const openLocalFilePicker = async () => {
+  const filePaths = await ipcRenderer.invoke(IpcEvents.OPEN_FILE_PICKER, {
+    filters: [
+      { name: 'json', extensions: ['json'] }
+    ],
+    properties: ['openFile']
+  });
+  
+  if (filePaths) {
+    return filePaths.map(path => path.replace(/\\/g, '/'));
   }
 };

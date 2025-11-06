@@ -74,3 +74,8 @@ lerna-debug.log
 #flatpak
 .flatpak-builder
 build-dir
+
+#Travis/IDE stuff
+.travis.yml
+.vs/
+target/*

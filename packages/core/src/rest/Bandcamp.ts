@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import * as bandcamp from 'bandcamp-scraper';
 import _ from 'lodash';
 
@@ -78,11 +78,18 @@ export const getTrackData = async (trackUrl: string) => {
     meta = scriptWithRaw.data('tralbum');
   }
 
+  const imageUrl = $('#tralbumArt').first().find('a').first().attr('href');
   const duration = _.get(meta, 'trackinfo[0].duration', 0);
   const stream = _.get(meta, 'trackinfo[0].file[\'mp3-128\']');
+  const name = _.get(meta, 'trackinfo[0].title');
 
   return {
+    url: trackUrl,
+    imageUrl,
+    name,
     stream,
-    duration
+    duration,
+    tags: [],
+    type: 'track' as const
   };
 };

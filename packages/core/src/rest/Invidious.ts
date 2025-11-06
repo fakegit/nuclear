@@ -1,9 +1,8 @@
 import { getOption } from '../persistence/store';
-import { StreamData } from '../plugins/plugins.types';
 
-const baseUrl = getOption('invidious.url');
+export const baseUrl: string = getOption('invidious.url') as string;
 
-const getTrackInfo = async (videoId) => {
+export const getTrackInfo = async (videoId) => {
   const response = await fetch(`${baseUrl}/api/v1/videos/${videoId}`);
   if (!response.ok) {
     throw new Error('invidious track info failed');
@@ -12,20 +11,14 @@ const getTrackInfo = async (videoId) => {
   return response.json();
 };
 
-export const trackSearch = async (query: string, currentStream?: StreamData) => {
+export const trackSearch = async (query: string) => {
   const response =  await fetch(`${baseUrl}/api/v1/search?q=${query}&sortBy=relevance&page=1`);
   if (!response.ok) {
     throw new Error('invidious search failed');
   }
-  const result = await response.json();
+  const results = await response.json();
+  results.shift();
+  const tracks = await Promise.all(results.map(result => getTrackInfo(result.videoId)));
 
-  result.shift();
-
-  const track = currentStream
-    ? result.find(({ videoId }) => currentStream.id !== videoId)
-    : result[0];
-
-  const trackInfo = await getTrackInfo(track.videoId);
-
-  return trackInfo;
+  return tracks;
 };

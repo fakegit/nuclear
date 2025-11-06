@@ -13,8 +13,8 @@ export type MiniPlayerProps = Omit<SeekbarProps, 'children'> &
   PlayerControlsProps &
   MiniTrackInfoProps &
   MiniPlayOptionsProps & {
-    timePlayed?: number;
-    timeToEnd?: number;
+    timePlayed?: any;
+    timeToEnd?: any;
     style?: React.HTMLAttributes<HTMLDivElement>['style'];
   };
 
@@ -36,6 +36,9 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
 
   timePlayed,
   timeToEnd,
+  skipSegments,
+  allowSkipSegment,
+  segmentPopupMessage,
 
   goForward,
   goBack,
@@ -52,6 +55,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
   <MiniPlayOptions
     playOptions={playOptions}
     onDisableMiniPlayer={onDisableMiniPlayer}
+    
   />
   <MiniTrackInfo
     cover={cover}
@@ -72,6 +76,10 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
       seek={seek}
       queue={queue}
       height='0.5em'
+      timePlayed={timePlayed}
+      skipSegments={skipSegments}
+      allowSkipSegment={allowSkipSegment}
+      segmentPopupMessage={segmentPopupMessage}
     />
   </div>
   <MiniPlayerControls

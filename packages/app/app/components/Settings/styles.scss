@@ -1,5 +1,5 @@
-@import "../../mixin";
-@import "../../vars";
+@use "../../mixin";
+@use "../../vars";
 
 .settings_container {
   display: flex;
@@ -21,8 +21,8 @@
   }
 
   .segment {
-    background: rgba($background2, 0.35);
-    border: 1px solid $background2;
+    background: rgba(vars.$background2, 0.35);
+    border: 1px solid vars.$background2;
   }
 
   .settings_item_text {
@@ -31,11 +31,12 @@
     line-height: 1rem;
 
     .settings_item_name {
+      margin-bottom: 0.5em;
     }
+  }
 
-    .settings_item_description {
-      color: rgba($white, 0.4);
-    }
+  .settings_item_description {
+    color: rgba(vars.$white, 0.5);
   }
 
   .settings_item,
@@ -80,26 +81,39 @@
       flex: 0 0 auto;
     }
 
-    .ui.fluid.input {
-      width: 100%;
+    .ui.input {
+      &.fluid {
+        width: 100%;
+      }
 
       input {
-        color: $grey;
-        background-color: $background3;
+        color: vars.$grey;
+        background-color: vars.$background3;
       }
     }
   }
 
   .settings_social_item {
     margin: 0;
+
+    &:not(:last-child) {
+      margin-bottom: 1em;
+    }
+
+    .ui.input {
+      &:not(:last-child) {
+        margin-right: 1em;
+      }
+      flex: 1 1 auto;
+    }
   }
 
   .lastfm_icon {
-    color: $red;
+    color: vars.$red;
   }
 
   .social_icon_bg {
-    color: $white;
+    color: vars.$white;
     font-size: 24px;
   }
 
@@ -154,6 +168,12 @@
 
     .directory_content {
       font-weight: bold;
+    }
+  }
+
+  .mastodon_logo {
+    svg {
+      height: 1.75em;
     }
   }
 }

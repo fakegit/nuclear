@@ -2,29 +2,33 @@ import React, { useCallback, useState } from 'react';
 import cx from 'classnames';
 import { Icon } from 'semantic-ui-react';
 
+
 import NeumorphicBox from '../../NeumorphicBox';
 import { VolumeControlsProps } from '../../VolumeControls';
 import { PlayOptionControlProps } from '../../VolumeControls/PlayOptions';
 
 import styles from './styles.scss';
 
+
 export type MiniPlayOptionsProps = Pick<VolumeControlsProps, 'playOptions'> & {
   onDisableMiniPlayer: () => void;
 };
+
 
 const MiniPlayOptionControl: React.FC<PlayOptionControlProps> = ({
   icon,
   enabled = true,
   onToggle
 }) => <button
+  className={styles.mini_play_options_control}
   onClick={onToggle}
 >
-    <Icon
-      className={cx({ disabled: !enabled })}
-      name={icon}
-      size='large'
-    />
-  </button>
+  <Icon
+    className={cx({ disabled: !enabled })}
+    name={icon}
+    size='large'
+  />
+</button>;
 
 const MiniPlayOptions: React.FC<MiniPlayOptionsProps> = ({
   onDisableMiniPlayer,
@@ -37,6 +41,7 @@ const MiniPlayOptions: React.FC<MiniPlayOptionsProps> = ({
   return <div className={styles.mini_play_options}>
     <NeumorphicBox small borderRadius='5px'>
       <button
+        className={styles.mini_play_options_button}
         onClick={onDisableMiniPlayer}
       >
         <Icon
@@ -47,6 +52,7 @@ const MiniPlayOptions: React.FC<MiniPlayOptionsProps> = ({
     </NeumorphicBox>
     <NeumorphicBox small borderRadius='5px'>
       <button
+        className={styles.mini_play_options_button}
         onClick={isExpanded ? contract : expand}
       >
         <Icon
@@ -55,10 +61,13 @@ const MiniPlayOptions: React.FC<MiniPlayOptionsProps> = ({
         />
       </button>
       {
-        isExpanded && playOptions.map(playOption => <MiniPlayOptionControl {...playOption} />)
+        isExpanded && playOptions.slice(1).map(playOption => <MiniPlayOptionControl
+          key={playOption.name}
+          {...playOption}
+        />)
       }
     </NeumorphicBox>
-  </div>
+  </div>;
 };
 
 export default MiniPlayOptions;

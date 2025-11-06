@@ -5,13 +5,16 @@ import styles from './styles.scss';
 
 export type NeumorphicBoxProps = {
   borderRadius?: string;
+  padding?: string;
   small?: boolean;
   pressed?: boolean;
+  children?: React.ReactNode;
 };
 
 const NeumorphicBox: React.FC<NeumorphicBoxProps> = ({
   children,
   borderRadius,
+  padding,
   small,
   pressed
 }) => <div
@@ -20,9 +23,9 @@ const NeumorphicBox: React.FC<NeumorphicBoxProps> = ({
     { [styles.small]: small },
     { [styles.pressed]: pressed }
   )}
-  style={{ borderRadius }}
+  style={{ borderRadius, padding }}
 >
-    {children}
-  </div>;
+  {children}
+</div>;
 
 export default NeumorphicBox;

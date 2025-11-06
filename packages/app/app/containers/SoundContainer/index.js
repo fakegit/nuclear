@@ -4,7 +4,10 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { compose, withProps } from 'recompose';
 import Sound, { Volume, Equalizer, AnalyserByFrequency } from 'react-hifi';
-import logger from 'electron-timber';
+import { logger } from '@nuclear/core';
+import { head } from 'lodash';
+import { IpcEvents, rest } from '@nuclear/core';
+import { post as mastodonPost } from '@nuclear/core/src/rest/Mastodon';
 
 import * as SearchActions from '../../actions/search';
 import * as PlayerActions from '../../actions/player';
@@ -12,13 +15,17 @@ import * as EqualizerActions from '../../actions/equalizer';
 import * as QueueActions from '../../actions/queue';
 import * as ScrobblingActions from '../../actions/scrobbling';
 import * as LyricsActions from '../../actions/lyrics';
+import * as VisualizerActions from '../../actions/visualizer'; 
 import { filterFrequencies } from '../../components/Equalizer/chart';
 import * as Autoradio from './autoradio';
 import VisualizerContainer from '../../containers/VisualizerContainer';
+import Normalizer from '../../components/Normalizer';
 import globals from '../../globals';
-import { rest } from '@nuclear/core';
+import HlsPlayer from '../../components/HLSPlayer';
+import { ipcRenderer } from 'electron';
 
 const lastfm = new rest.LastFmApi(globals.lastfmApiKey, globals.lastfmApiSecret);
+let previousTrack = null;
 
 class SoundContainer extends React.Component {
   constructor(props) {
@@ -29,13 +36,20 @@ class SoundContainer extends React.Component {
     this.handleLoading = this.handleLoading.bind(this);
     this.handleLoaded = this.handleLoaded.bind(this);
     this.handleError = this.handleError.bind(this);
+    this.soundRef = React.createRef();
   }
-
+  
   handlePlaying(update) {
     const seek = update.position;
     const progress = (update.position / update.duration) * 100;
+    const rate = (this.props.player.playbackRate + 2) / 4;
     this.props.actions.updatePlaybackProgress(progress, seek);
     this.props.actions.updateStreamLoading(false);
+
+    if (this.soundRef?.current?.audio){
+      this.soundRef.current.audio.setAttribute('playbackRate', '');
+      this.soundRef.current.audio.playbackRate = rate;
+    }
   }
 
   handleLoading() {
@@ -46,57 +60,92 @@ class SoundContainer extends React.Component {
     this.handleLoadLyrics();
     this.handleAutoRadio();
     this.props.actions.updateStreamLoading(false);
+
+    let currentTrack = this.props.queue.queueItems[
+      this.props.queue.currentTrack
+    ];
+    if (this.props.settings.listeningHistory && currentTrack !== previousTrack) {
+      // Don't add the same track
+      if (previousTrack === null ||
+          currentTrack.artist !== previousTrack.artist ||
+          currentTrack.name !== previousTrack.name ||
+          currentTrack.duration !== previousTrack.duration) {
+        previousTrack = currentTrack;
+        ipcRenderer.send(IpcEvents.POST_LISTENING_HISTORY_ENTRY, {
+          title: currentTrack.title ?? currentTrack.name,
+          artist: currentTrack.artist
+        });
+      }
+    }
   }
 
   handleLoadLyrics() {
-    const currentSong = this.props.queue.queueItems[
-      this.props.queue.currentSong
+    const currentTrack = this.props.queue.queueItems[
+      this.props.queue.currentTrack
     ];
 
-    if (typeof currentSong.lyrics === 'undefined') {
-      this.props.actions.lyricsSearch(currentSong);
+    if (currentTrack && typeof currentTrack.lyrics === 'undefined') {
+      this.props.actions.lyricsSearch(currentTrack);
     }
   }
 
   handleAutoRadio() {
     if (
       this.props.settings.autoradio &&
-      this.props.queue.currentSong === this.props.queue.queueItems.length - 1
+      this.props.queue.currentTrack === this.props.queue.queueItems.length - 1
     ) {
       Autoradio.addAutoradioTrackToQueue(this.props);
     }
   }
 
   handleFinishedPlaying() {
+    if (this.props.settings['visualizer.shuffle']) {
+      this.props.actions.randomizePreset();
+    }
+
+    const currentTrack = this.props.queue.queueItems[
+      this.props.queue.currentTrack
+    ];
     if (
       this.props.scrobbling.lastFmScrobblingEnabled &&
       this.props.scrobbling.lastFmSessionKey
     ) {
-      const currentSong = this.props.queue.queueItems[
-        this.props.queue.currentSong
-      ];
       this.props.actions.scrobbleAction(
-        currentSong.artist,
-        currentSong.name,
+        currentTrack.artist,
+        currentTrack.title ?? currentTrack.name,
         this.props.scrobbling.lastFmSessionKey
       );
     }
 
     if (
       this.props.settings.shuffleQueue ||
-      this.props.queue.currentSong < this.props.queue.queueItems.length - 1 ||
+      this.props.queue.currentTrack < this.props.queue.queueItems.length - 1 ||
       this.props.settings.loopAfterQueueEnd
     ) {
       this.props.actions.nextSong();
     } else {
-      this.props.actions.pausePlayback();
+      this.props.actions.pausePlayback(false);
+    }
+
+    if (this.props.settings.mastodonAccessToken &&
+      this.props.settings.mastodonInstance) {
+      const selectedStreamUrl = this.props.currentStream?.originalUrl || '';
+      let content = this.props.settings.mastodonPostFormat + '';
+      content = content.replaceAll('{{artist}}', currentTrack.artist);
+      content = content.replaceAll('{{title}}', currentTrack.name);
+      content = content.replaceAll('{{url}}', selectedStreamUrl);
+      mastodonPost(
+        this.props.settings.mastodonInstance,
+        this.props.settings.mastodonAccessToken,
+        content
+      );
     }
   }
 
   addAutoradioTrackToQueue() {
-    const currentSong = this.props.queue.queueItems[this.props.queue.currentSong];
+    const currentTrack = this.props.queue.queueItems[this.props.queue.currentTrack];
     return lastfm
-      .getArtistInfo(currentSong.artist)
+      .getArtistInfo(currentTrack.artist)
       .then(artist => artist.json())
       .then(artistJson => this.getSimilarArtists(artistJson.artist))
       .then(similarArtists => this.getRandomElement(similarArtists))
@@ -131,7 +180,7 @@ class SoundContainer extends React.Component {
       this.props.actions.addToQueue({
         artist: artist.name,
         name: track.name,
-        thumbnail: track.thumbnail || track.image[0]['#text']
+        thumbnail: track.thumbnail ?? track.image[0]['#text'] ?? track.thumb
       });
       resolve(true);
     });
@@ -139,26 +188,41 @@ class SoundContainer extends React.Component {
 
   handleError(err) {
     logger.error(err.message);
-    this.props.actions.streamFailed();
+    const { queue } = this.props;
+    this.props.actions.removeFirstStream(queue.queueItems[queue.currentTrack], queue.currentTrack);
   }
 
   shouldComponentUpdate(nextProps) {
-    const currentSong = nextProps.queue.queueItems[nextProps.queue.currentSong];
+    const currentTrack = nextProps.queue.queueItems[nextProps.queue.currentTrack];
 
     return (
       this.props.equalizer !== nextProps.equalizer ||
-      this.props.queue.currentSong !== nextProps.queue.currentSong ||
+      this.props.queue.currentTrack !== nextProps.queue.currentTrack ||
       this.props.player.playbackStatus !== nextProps.player.playbackStatus ||
       this.props.player.seek !== nextProps.player.seek ||
-      (!!currentSong && !!currentSong.streams && currentSong.streams.length > 0)
+      (Boolean(currentTrack) && Boolean(currentTrack.streams))
     );
+  }
+
+  isHlsStream(url) {
+    return /http.*?\.m3u8/g.test(url);
   }
 
   render() {
     const { queue, player, equalizer, actions, enableSpectrum, currentStream, location, defaultEqualizer } = this.props;
-    const currentTrack = queue.queueItems[queue.currentSong];
+    const currentTrack = queue.queueItems[queue.currentTrack];
     const usedEqualizer = enableSpectrum ? equalizer : defaultEqualizer;
-    return Boolean(currentStream) && (
+
+    return Boolean(currentStream) && (this.isHlsStream(currentStream.stream) ? (
+      <HlsPlayer
+        source={currentStream.stream}
+        onError={this.handleError}
+        playStatus={player.playbackStatus}
+        onFinishedPlaying={this.handleFinishedPlaying}
+        muted={player.muted}
+        volume={player.volume}
+      /> 
+    ) : (
       <Sound
         url={currentStream.stream}
         playStatus={player.playbackStatus}
@@ -168,7 +232,12 @@ class SoundContainer extends React.Component {
         onLoad={this.handleLoaded}
         position={player.seek}
         onError={this.handleError}
+        ref={this.soundRef}
       >
+        <Normalizer
+          url={currentStream.stream}
+          normalize={this.props.settings.normalize}
+        />
         <Volume value={player.muted ? 0 : player.volume} />
         <Equalizer
           data={filterFrequencies.reduce((acc, freq, idx) => ({
@@ -186,7 +255,7 @@ class SoundContainer extends React.Component {
           trackName={currentTrack ? `${currentTrack.artist} - ${currentTrack.name}` : undefined}
         />
       </Sound>
-    );
+    ));
   }
 }
 
@@ -213,7 +282,8 @@ function mapDispatchToProps(dispatch) {
         QueueActions,
         ScrobblingActions,
         LyricsActions,
-        EqualizerActions
+        EqualizerActions,
+        VisualizerActions
       ),
       dispatch
     )
@@ -227,9 +297,9 @@ export default compose(
     mapDispatchToProps
   ),
   withProps(({ queue }) => ({
-    currentTrack: queue.queueItems[queue.currentSong]
+    currentTrack: queue.queueItems[queue.currentTrack]
   })),
-  withProps(({ currentTrack, plugins }) => ({
-    currentStream: Boolean(currentTrack) && (_.find(currentTrack.streams, { source: plugins.selected.streamProviders }) || _.head(currentTrack.streams))
+  withProps(({ currentTrack }) => ({
+    currentStream: head(currentTrack?.streams)
   }))
 )(SoundContainer);

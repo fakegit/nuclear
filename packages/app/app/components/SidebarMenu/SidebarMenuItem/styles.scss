@@ -1,4 +1,4 @@
-@import '../../../vars.scss';
+@use "../../../vars.scss";
 
 .sidebar_menu_item_container {
   display: flex;
@@ -10,14 +10,18 @@
 
   padding: 0.75rem 1rem;
 
-  transition: $short-duration;
+  transition: vars.$short-duration;
   letter-spacing: 0.5px;
 
   font-size: 1.25rem;
   font-variant: small-caps;
 
   &:hover {
-    background: $background3;
+    background: vars.$bgdarker;
+  }
+
+  i {
+    margin: 0 0.5em 0 0;
   }
 
   span {
@@ -26,5 +30,5 @@
 }
 
 .left_panel:not(.compact_panel) .sidebar_menu_item_container .fa {
-    width: 20px;
+  width: 20px;
 }

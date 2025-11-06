@@ -13,13 +13,16 @@ export default class Track {
   };
   artist: string;
   title: string;
+  name?: string;
   duration: string | number;
-  
+
   position?: string | number;
+  discNumber?: string | number;
+  playcount?: string | number;
   thumbnail?: string;
-  thumb?: string;
   extraArtists?: string[];
   type?: string;
+  local?: boolean;
 
   constructor(data: PartialExcept<Track, 'artist' | 'title'> = {
     artist: '',
@@ -29,15 +32,19 @@ export default class Track {
     this.ids = data.ids || {};
     this.artist = data.artist;
     this.title = data.title;
+    this.name = data.title;
     this.duration = data.duration;
     this.position = data.position;
     this.thumbnail = data.thumbnail;
+    this.discNumber = data.discNumber;
   }
 
   addSearchResultData(data: SearchResultsTrack): void {
     this.ids = { ...this.ids, [data.source]: data.id };
     this.artist = data.artist;
     this.title = data.title;
+    this.name = data.title;
+    this.discNumber = data.discNumber;
   }
 
   static fromSearchResultData(data: SearchResultsTrack): Track {

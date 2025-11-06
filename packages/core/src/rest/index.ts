@@ -17,3 +17,21 @@ export { SponsorBlock };
 
 import * as Deezer from './Deezer';
 export { Deezer };
+
+import * as Mastodon from './Mastodon';
+export { Mastodon };
+
+import * as iTunes from './iTunes';
+export { iTunes };
+
+import * as Spotify from './Spotify';
+export { Spotify };
+
+import { NuclearPlaylistsService } from './Nuclear/Playlists';
+export { NuclearPlaylistsService };
+
+import { NuclearIdentityService } from './Nuclear/Identity';
+export { NuclearIdentityService };
+
+import { NuclearStreamMappingsService } from './Nuclear/StreamMappings';
+export { NuclearStreamMappingsService };

@@ -1,112 +1,181 @@
-/* eslint-disable node/no-missing-import */
-import React from 'react';
+import React, { useState } from 'react';
 import _ from 'lodash';
-import { Icon, Dropdown } from 'semantic-ui-react';
 
-import ContextPopup from '../ContextPopup';
+import ContextPopup, { ContextPopupProps } from '../ContextPopup';
 import PopupButton from '../PopupButton';
 import PopupDropdown from '../PopupDropdown';
+import InputDialog from '../InputDialog';
+import { PlaylistsDropdown } from './PlaylistsDropdown';
 
-const TrackPopup: React.FC<{
-  trigger: React.ReactNode;
-  artist: string;
-  title: string;
-  thumb: string;
-  playlists: Array<{
+export type TrackPopupProps = {
+  trigger: ContextPopupProps['trigger'];
+  artist?: ContextPopupProps['artist'];
+  title: ContextPopupProps['title'];
+  thumb?: ContextPopupProps['thumb'];
+
+  playlists?: Array<{
     name: string;
   }>;
 
-  withAddToQueue: boolean;
-  withPlayNow: boolean;
-  withAddToFavorites: boolean;
-  withAddToPlaylist: boolean;
-  withAddToDownloads: boolean;
+  strings?: TrackPopupStrings;
 
-  onAddToQueue: () => void;
-  onPlayNow: () => void;
-  onAddToFavorites: () => void;
-  onAddToPlaylist: ({name: string}) => void;
-  onAddToDownloads: () => void;
-}> = ({
+  withAddToQueue?: boolean;
+  withPlayNow?: boolean;
+  withPlayNext?: boolean;
+  withAddToFavorites?: boolean;
+  withAddToPlaylist?: boolean;
+  withAddToDownloads?: boolean;
+
+  onAddToQueue?: () => void;
+  onPlayNext?: () => void;
+  onPlayNow?: () => void;
+  onAddToFavorites?: () => void;
+  onAddToPlaylist?: ({ name }: { name: string }) => void;
+  onCreatePlaylist?: ({ name }: { name: string }) => void;
+  onAddToDownloads?: () => void;
+};
+
+export type TrackPopupStrings = {
+  textAddToQueue: string;
+  textPlayNow: string;
+  textPlayNext: string;
+  textAddToFavorites: string;
+  textAddToPlaylist: string;
+  textCreatePlaylist: string;
+  textAddToDownloads: string;
+  createPlaylistDialog: {
+    title: string;
+    placeholder: string;
+    accept: string;
+    cancel: string;
+  }
+}
+
+const TrackPopup: React.FC<TrackPopupProps> = ({
   trigger,
   artist,
   title,
   thumb,
   playlists,
-  withAddToQueue,
-  withPlayNow,
-  withAddToFavorites,
-  withAddToPlaylist,
-  withAddToDownloads,
+
+  withAddToQueue=true,
+  withPlayNow=true,
+  withPlayNext=true,
+  withAddToFavorites=true,
+  withAddToPlaylist=true,
+  withAddToDownloads=true,
+  strings={
+    textAddToQueue: 'Add to queue',
+    textPlayNow: 'Play now',
+    textPlayNext: 'Play next',
+    textAddToFavorites: 'Add to favorites',
+    textAddToPlaylist: 'Add to playlist',
+    textCreatePlaylist: 'Create a new playlist',
+    textAddToDownloads: 'Download',
+    createPlaylistDialog: {
+      title: 'Input playlist name:',
+      placeholder: 'Playlist name',
+      accept: 'Save',
+      cancel: 'Cancel'
+    }
+  },
   onAddToQueue,
+  onPlayNext,
   onPlayNow,
   onAddToFavorites,
   onAddToPlaylist,
+  onCreatePlaylist,
   onAddToDownloads
-}) => (
-  <ContextPopup
-    trigger={trigger}
-    artist={artist}
-    title={title}
-    thumb={thumb}
-  >
-    {
-      withAddToQueue &&
-      <PopupButton
-        onClick={onAddToQueue}
-        ariaLabel='Add track to queue'
-        icon='plus'
-        label='Add to queue'
-      />
-    }
+}) => {
+  const [isCreatePlaylistDialogOpen, setIsCreatePlaylistDialogOpen] = useState(false);
 
-    {
-      withPlayNow &&
-      <PopupButton
-        onClick={onPlayNow}
-        ariaLabel='Play this track now'
-        icon='play'
-        label='Play now'
-      />
-    }
+  return (
+    <>
+      <ContextPopup
+        trigger={trigger}
+        artist={artist}
+        title={title}
+        thumb={thumb}
+      >
+        {withAddToQueue && (
+          <PopupButton
+            data-testid='track-popup-add-queue'
+            onClick={onAddToQueue}
+            ariaLabel='Add track to queue'
+            icon='plus'
+            label={strings.textAddToQueue}
+          />
+        )}
 
-    {
-      withAddToFavorites &&
-      <PopupButton
-        onClick={onAddToFavorites}
-        ariaLabel='Add this track to favorites'
-        icon='star'
-        label='Add to favorites'
-      />
-    }
+        {withPlayNext && (
+          <PopupButton
+            data-testid='track-popup-play-next'
+            onClick={onPlayNext}
+            ariaLabel='Add track to play next'
+            icon='play'
+            label={strings.textPlayNext}
+          />
+        )}
 
-    {
-      withAddToPlaylist && Boolean(playlists.length) && 
-      <PopupDropdown text='Add to playlist'>
-        {_.map(playlists, (playlist, i) => {
-          return (
-            <Dropdown.Item
-              key={i}
-              onClick={() => onAddToPlaylist(playlist)}
-            >
-              <Icon name='music' />
-              {playlist.name}
-            </Dropdown.Item>
-          );
-        })}
-      </PopupDropdown>
-    }
+        {withPlayNow && (
+          <PopupButton
+            data-testid='track-popup-play-now'
+            onClick={onPlayNow}
+            ariaLabel='Play this track now'
+            icon='play'
+            label={strings.textPlayNow}
+          />
+        )}
 
-    {
-      withAddToDownloads &&
-      <PopupButton
-        onClick={onAddToDownloads}
-        ariaLabel='Download this track'
-        icon='download'
-        label='Download'
+        {withAddToFavorites && (
+          <PopupButton
+            data-testid='track-popup-add-favorites'
+            onClick={onAddToFavorites}
+            ariaLabel='Add this track to favorites'
+            icon='heart'
+            label={strings.textAddToFavorites}
+          />
+        )}
+
+        {withAddToPlaylist && Boolean(playlists) && (
+          <PlaylistsDropdown
+            playlists={playlists}
+            strings={{
+              textAddToPlaylist: strings.textAddToPlaylist,
+              textCreatePlaylist: strings.textCreatePlaylist
+            }}
+            onAddToPlaylist={onAddToPlaylist}
+            setIsCreatePlaylistDialogOpen={setIsCreatePlaylistDialogOpen}
+          />
+        )}
+
+        {withAddToDownloads && (
+          <PopupButton
+            data-testid='track-popup-download'
+            onClick={onAddToDownloads}
+            ariaLabel='Download this track'
+            icon='download'
+            label={strings.textAddToDownloads}
+          />
+        )}
+      </ContextPopup>
+      <InputDialog
+        isOpen={isCreatePlaylistDialogOpen}
+        onClose={() => {
+          setIsCreatePlaylistDialogOpen(false);
+        }}
+        header={<h4>{strings.createPlaylistDialog.title}</h4>}
+        placeholder={strings.createPlaylistDialog.placeholder}
+        acceptLabel={strings.createPlaylistDialog.accept}
+        cancelLabel={strings.createPlaylistDialog.cancel}
+        onAccept={(input) => {
+          onCreatePlaylist({ name: input });
+        }}
+        initialString={title}
+        testIdPrefix='track-popup-create-playlist-dialog'
       />
-    }
-  </ContextPopup>
-);
+    </>
+  );
+};
 
 export default TrackPopup;

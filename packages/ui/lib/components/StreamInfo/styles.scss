@@ -1,18 +1,19 @@
-@import '../../common.scss';
+@use "../../common.scss";
 
 .stream_info {
   position: relative;
   display: block;
-  color: $white !important;
+  color: common.$white !important;
+  height: auto !important;
 
   .menu.transition.visible {
     height: max-content;
-    background-color: $background2;
+    background-color: common.$background2;
     padding: 0;
   }
 
   .text {
-    color: $white;
+    color: common.$white;
   }
 
   .stream_text_info {
@@ -23,38 +24,68 @@
     display: flex;
     flex-flow: column;
     padding: 0.5rem;
-    background: rgba($black, 0.85);
+    background: rgba(common.$black, 0.85);
     border-radius: 0.25rem;
   }
-  
+
   label {
-    color: rgba($white, 0.25);
+    color: rgba(common.$white, 0.25);
     font-size: 12px;
   }
-  
+
   .stream_source {
     display: flex;
-    flex-flow: column;
-  }
-  
-  .stream_title {
-    display: flex;
-    flex-flow: column;
-  
-    span {
-      @include ellipsis;
-    }
-  }
-  
-  .stream_id {
-    display: flex;
-    flex-flow: column;
+    justify-content: flex-end;
 
-    &>* {
-      @include ellipsis;
+    .stream_source_name {
+      display: flex;
+      align-items: center;
+      background: common.$blue;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
     }
   }
-  
+
+  .stream_title {
+    min-width: 0 !important;
+    margin-bottom: 0.5rem;
+
+    div.item[role="option"] {
+      // has to be !important because semantic ui
+      // sets !important on the padding
+      padding: 0.5em !important;
+    }
+
+    div[role="alert"] {
+      @include common.ellipsis;
+      position: relative;
+      display: block;
+      font-weight: bold;
+      max-width: 100%;
+    }
+  }
+
+  .stream_author {
+    @include common.ellipsis;
+    color: rgba(common.$white, 0.5);
+  }
+
+  .stream_id {
+    color: rgba(common.$white, 0.5);
+    display: flex;
+    align-items: center;
+
+    span {
+      @include common.ellipsis;
+      display: inline-block;
+      width: calc(100% - 48px);
+    }
+
+    button {
+      margin-left: 0.5rem;
+    }
+  }
+
   .stream_thumbnail {
     display: flex;
     flex-flow: row;
@@ -65,29 +96,49 @@
     height: 155px;
     width: 205px;
   }
-  
+
   img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
   }
-  
-  .stream_buttons {
+
+  .spacer {
+    flex: 1 0 auto;
+  }
+}
+
+.stream_option {
+  display: flex;
+  flex-flow: column;
+  line-height: 1.5;
+  padding: 0;
+
+  .stream_option_title,
+  .stream_option_author {
+    @include common.ellipsis;
+    color: rgba(common.$white, 0.5);
+    z-index: 1;
+  }
+
+  .stream_option_thumbnail {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 100%;
-    display: flex;
-    flex-flow: column;
-    justify-content: flex-end;
-    align-items: flex-end;
-    padding: 0.5rem;
-    pointer-events: none;
-  
-    a {
-      background: rgba($black, 0.5);
-      padding: 0.5rem 0.75rem;
-      pointer-events: all;
-      color: inherit;
-    }
+    left: 0;
+    right: 0;
+  }
+
+  .stream_option_thumbnail_overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(common.$black, 0.8);
+  }
+
+  &:hover .stream_option_thumbnail_overlay {
+    background: rgba(common.$black, 0.6);
   }
 }

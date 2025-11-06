@@ -59,6 +59,7 @@ exports[`Album view container should display favorite albums 1`] = `
           >
             <div
               class="nuclear card_container"
+              data-testid="album-card"
             >
               <div
                 class="card animated"
@@ -69,12 +70,6 @@ exports[`Album view container should display favorite albums 1`] = `
                   role="listbox"
                   tabindex="0"
                 >
-                  <div
-                    aria-atomic="true"
-                    aria-live="polite"
-                    class="text"
-                    role="alert"
-                  />
                   <i
                     aria-hidden="true"
                     class="ellipsis vertical icon"

@@ -7,24 +7,30 @@ import SystemApi from '../services/system-api';
 import Window from '../services/window';
 import { ipcEvent, ipcController } from '../utils/decorators';
 import Discord from '../services/discord';
+import TrayMenu from '../services/trayMenu';
+import Logger, { $mainLogger } from '../services/logger';
 
 @ipcController()
 class IpcPlayer {
   constructor(
     @inject(Discord) private discord: Discord,
+    @inject(TrayMenu) private trayMenu: TrayMenu,
     @inject(SystemApi) private systemApi: NuclearApi,
-    @inject(Window) private window: Window
+    @inject(Window) private window: Window,
+    @inject($mainLogger) private logger: Logger
   ) {}
 
   @ipcEvent(IpcEvents.PLAY)
   onPlay() {
     this.systemApi.play();
+    this.trayMenu.update({isPlaying: true});
     return this.discord.play();
   }
 
   @ipcEvent(IpcEvents.PAUSE)
   onPause() {
     this.systemApi.pause();
+    this.trayMenu.update({isPlaying: false});
     return this.discord.pause();
   }
 
@@ -54,9 +60,14 @@ class IpcPlayer {
   }
 
   @ipcEvent(IpcEvents.QUEUE_CLEAR)
-  onClearTrackList() {
-    this.systemApi.clearTrackList && this.systemApi.clearTrackList();
-    this.discord.clear();
+  async onClearTrackList() {
+    try {
+      this.systemApi.clearTrackList && this.systemApi.clearTrackList();
+      await this.discord.clear();
+      this.trayMenu.update({isPlaying: false, track: null});
+    } catch (e) {
+      this.logger.error('Main process failed to react to IPC clear queue event');
+    }
   }
 
   @ipcEvent(IpcEvents.SONG_CHANGE)
@@ -68,6 +79,7 @@ class IpcPlayer {
     this.window.setTitle(`${arg.artist} - ${arg.name} - Nuclear Music Player`);
     this.systemApi.sendMetadata && this.systemApi.sendMetadata(arg);
     this.discord.trackChange(arg);
+    this.trayMenu.update({track: arg});
   }
 }
 

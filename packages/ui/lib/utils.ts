@@ -1,6 +1,11 @@
 import _ from 'lodash';
+import { Track, TrackItem } from './types';
 
 export function formatDuration(duration) {
+  if (typeof duration === 'string') {
+    return duration;
+  }
+
   if (!_.isFinite(parseInt(duration)) || duration <= 0) {
     return '00:00';
   }
@@ -27,28 +32,42 @@ export function formatDuration(duration) {
   }
 }
 
-export const getThumbnail = album => {
-  return _.get(album, 'coverImage',
-    _.get(album, 'thumb'));
-};
-
-type Track = {
-  name?: string;
-  artist: string | { name: string };
-  local?: boolean;
-  streams: any[];
-}
-
-export const getTrackTitle = (track: Track) => track?.name;
+export const getTrackTitle = (track: Track) => track?.name || track?.title;
 
 export const getTrackArtist = (track: Track) => _.isString(track?.artist)
   ? track?.artist
   : track?.artist?.name;
 
-export const getTrackItem = track => ({
+export const getThumbnail = albumOrTrack => _.get(albumOrTrack, 'coverImage')
+  || _.get(albumOrTrack, 'thumb')
+  || _.get(albumOrTrack, 'thumbnail');
+
+export const getTrackItem = (track: Track): TrackItem => ({
   artist: getTrackArtist(track),
   name: getTrackTitle(track),
   thumbnail: getThumbnail(track),
   local: track.local,
-  streams: track.streams
+  streams: track.streams ?? [],
+  uuid: track.uuid
 });
+
+export const areTracksEqualByName = (trackA: Track, trackB: Track) => getTrackArtist(trackA) === getTrackArtist(trackB) && getTrackTitle(trackA) === getTrackTitle(trackB);
+
+export const timestampToDateString = (timestamp: number, locale: string) => new Date(timestamp).toLocaleDateString(
+  locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }
+);
+
+export const timestampToTimeString = (timestamp: number, locale: string) => new Date(timestamp).toLocaleDateString(
+  locale, {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'
+  }
+);

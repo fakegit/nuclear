@@ -1,12 +1,14 @@
 ---
 name: Bug report
-about: Information before opening a new issue
+about: I want to report a bug
 title: ''
 labels: bug
 assignees: ''
 
 ---
 
-Before you open a new issue, check this for solutions to some common problems:
-https://nuclearmusic.readthedocs.io/en/latest/troubleshooting/
-If you want to open a new issue anyway, delete this text.
+**Platform:**
+
+**Nuclear version:**
+
+**Description of the issue:**

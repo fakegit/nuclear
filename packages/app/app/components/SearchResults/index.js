@@ -1,4 +1,5 @@
 import React from 'react';
+import _ from 'lodash';
 import { Tab } from 'semantic-ui-react';
 import { withTranslation } from 'react-i18next';
 import { Card } from '@nuclear/ui';
@@ -15,11 +16,12 @@ class SearchResults extends React.Component {
     return (
       <Tab.Pane loading={this.props.unifiedSearchStarted} attached={false}>
         <div className={styles.pane_container}>
-          <div className={styles.row}>
+          <div className='row'>
             <AllResults
               {...this.props}
               albumInfoSearch={this.albumInfoSearch.bind(this)}
               artistInfoSearch={this.artistInfoSearch.bind(this)}
+              podcastInfoSearch={this.podcastInfoSearch.bind(this)}
             />
           </div>
         </div>
@@ -57,7 +59,7 @@ class SearchResults extends React.Component {
     );
   }
 
-  renderLastFmPane(collection) {
+  renderTrackListPane(collection) {
     if (typeof collection !== 'undefined') {
 
       return (
@@ -73,13 +75,15 @@ class SearchResults extends React.Component {
       );
     } else {
       return (
-        <Tab.Pane loading={this.props.unifiedSearchStarted} attached={false}>
-          <div className={styles.pane_container}>Nothing found.</div>
+        <Tab.Pane
+          loading={this.props.unifiedSearchStarted}
+          attached={false}
+        >
+          <div className={styles.pane_container}>{this.props.t('empty')}</div>
         </Tab.Pane>
       );
     }
   }
-
 
   renderPlaylistPane() {
     return (
@@ -98,36 +102,55 @@ class SearchResults extends React.Component {
   }
 
   panes() {
+    const artistsHasResults = _.get(this.props.artistSearchResults, ['length'], 0) > 0;
+    const albumsHasResults = _.get(this.props.albumSearchResults, ['length'], 0) > 0;
+    const tracksHasResults = _.get(this.props.trackSearchResults, ['info', 'length'], 0) > 0;
+    const playlistsHasResults = _.get(this.props.playlistSearchResults, ['info', 'length'], 0) > 0;
+    const liveStreamsHasResults = _.get(this.props.liveStreamSearchResults, ['info', 'length'], 0) > 0;
+    const podcastsHasResults = _.get(this.props.podcastSearchResults, ['length'], 0) > 0;
+
     const panes = [
       {
-        menuItem: 'All',
+        menuItem: this.props.t('all'),
         render: () => this.renderAllResultsPane()
       },
-      {
-        menuItem: 'Artists',
+      artistsHasResults && {
+        menuItem: this.props.t('artist_plural'),
         render: () =>
           this.renderPane(
             this.props.artistSearchResults,
             this.artistInfoSearch.bind(this)
           )
       },
-      {
-        menuItem: 'Albums',
+      albumsHasResults && {
+        menuItem: this.props.t('album_plural'),
         render: () =>
           this.renderPane(
             this.props.albumSearchResults,
             this.albumInfoSearch.bind(this)
           )
       },
-      {
-        menuItem: 'Tracks',
-        render: () => this.renderLastFmPane(this.props.trackSearchResults.info)
+      tracksHasResults && {
+        menuItem: this.props.t('track_plural'),
+        render: () => this.renderTrackListPane(this.props.trackSearchResults.info)
       },
-      {
-        menuItem: 'Playlist',
-        render: () => this.renderPlaylistPane(this.props.playlistSearchResults)
+      playlistsHasResults && {
+        menuItem: this.props.t('playlist'),
+        render: () => this.renderPlaylistPane()
+      },
+      liveStreamsHasResults && {
+        menuItem: this.props.t('live-stream'),
+        render: () => this.renderTrackListPane(this.props.liveStreamSearchResults.info)
+      },
+      podcastsHasResults && {
+        menuItem: this.props.t('podcast'),
+        render: () =>
+          this.renderPane(
+            this.props.podcastSearchResults,
+            this.podcastInfoSearch.bind(this)
+          )
       }
-    ];
+    ].filter(pane => !!pane);
 
     return panes;
   }
@@ -140,6 +163,11 @@ class SearchResults extends React.Component {
   artistInfoSearch(artistId) {
     this.props.artistInfoSearch(artistId);
     this.props.history.push('/artist/' + artistId);
+  }
+
+  podcastInfoSearch(podcastId, releaseType, release) {
+    this.props.albumInfoSearch(podcastId, releaseType, release);
+    this.props.history.push('/album/' + podcastId);
   }
 
   render() {

@@ -5,7 +5,9 @@ import { bindActionCreators } from 'redux';
 import PropTypes from 'prop-types';
 import numeral from 'numeral';
 import { Icon } from 'semantic-ui-react';
-import { formatDuration } from '@nuclear/ui';
+import { head } from 'lodash';
+
+import { formatDuration, getTrackArtist, getTrackTitle } from '@nuclear/ui';
 
 import * as QueueActions from '../../actions/queue';
 
@@ -14,18 +16,17 @@ import artPlaceholder from '../../../resources/media/art_placeholder.png';
 
 import styles from './styles.scss';
 
-
 class TrackRow extends React.Component {
   // this function should be moved onto interface for 'track'
-  renderAlbum (track) {
+  renderAlbum(track) {
     return (
-      <td className={styles.track_album}>
-        { track.album }
+      <td>
+        {track.album}
       </td>
     );
   }
 
-  renderDuration (track) {
+  renderDuration(track) {
     if (track.duration === 0) {
       return <td className={styles.track_duration} />;
     }
@@ -36,13 +37,13 @@ class TrackRow extends React.Component {
     );
   }
 
-  playTrack () {
+  playTrack() {
     this.props.actions.playTrack(this.props.streamProviders, {
       artist: this.props.track.artist.name,
       name: this.props.track.name,
       thumbnail: this.getTrackThumbnail(),
       local: this.props.track.local,
-      streams: this.props.track.streams
+      stream: head(this.props.track.streams)
     });
   }
 
@@ -54,8 +55,8 @@ class TrackRow extends React.Component {
         this.props.track,
         'thumbnail',
         _.get(
-          this.props.track, 
-          'image[0][#text]', 
+          this.props.track,
+          'image[0][#text]',
           artPlaceholder
         )
       )
@@ -70,7 +71,7 @@ class TrackRow extends React.Component {
     }) < 0;
   }
 
-  renderTrigger (track) {
+  renderTrigger(track) {
     const {
       displayCover,
       displayTrackNumber,
@@ -85,33 +86,34 @@ class TrackRow extends React.Component {
       <tr className={styles.track} onDoubleClick={this.playTrack.bind(this)}>
         {
           withDeleteButton &&
-            <td className={styles.track_row_buttons}>
-              <a onClick={onDelete}>
-                <Icon name='close' />
-              </a>
-            </td>
+          <td className={styles.track_row_buttons}>
+            <a onClick={onDelete}>
+              <Icon name='close' />
+            </a>
+          </td>
         }
         {
           displayCover &&
-            <td className={styles.track_thumbnail}>
-              <img src={this.getTrackThumbnail()}/>
-            </td>
+          <td className={styles.track_thumbnail}>
+            <img src={this.getTrackThumbnail()} />
+          </td>
         }
-        { displayTrackNumber && <td className={styles.track_number}>{track.position}</td> }
-        { displayArtist && <td className={styles.track_artist}>{track.artist.name}</td> }
-        <td className={styles.track_name}>{ track.name }</td>
-        { displayAlbum && this.renderAlbum(track) }
-        { displayDuration && this.renderDuration(track) }
-        { displayPlayCount && <td className={styles.playcount}>{numeral(track.playcount).format('0,0')}</td> }
+        {displayTrackNumber && <td className={styles.track_number}>{track.position}</td>}
+        {displayArtist && <td>{track.artist.name}</td>}
+        <td>{track.name}</td>
+        {displayAlbum && this.renderAlbum(track)}
+        {displayDuration && this.renderDuration(track)}
+        {displayPlayCount && <td>{numeral(track.playcount).format('0,0')}</td>}
       </tr>
     );
   }
 
-  render () {
+  render() {
 
     const {
       track,
       withAddToQueue,
+      withPlayNext,
       withPlayNow,
       withAddToFavorites,
       withAddToPlaylist,
@@ -121,11 +123,12 @@ class TrackRow extends React.Component {
       <TrackPopupContainer
         trigger={this.renderTrigger(track)}
         track={track}
-        artist={track.artist.name}
-        title={track.name}
+        artist={getTrackArtist(track)}
+        title={getTrackTitle(track)}
         thumb={this.getTrackThumbnail()}
 
         withAddToQueue={withAddToQueue}
+        withPlayNext={withPlayNext}
         withPlayNow={withPlayNow}
         withAddToFavorites={withAddToFavorites && this.canAddToFavorites()}
         withAddToPlaylist={withAddToPlaylist}
@@ -146,6 +149,7 @@ TrackRow.propTypes = {
   displayPlayCount: PropTypes.bool,
 
   withAddToQueue: PropTypes.bool,
+  withPlayNext: PropTypes.bool,
   withPlayNow: PropTypes.bool,
   withAddToFavorites: PropTypes.bool,
   withAddToPlaylist: PropTypes.bool,
@@ -157,13 +161,14 @@ TrackRow.propTypes = {
 
 TrackRow.defaultProps = {
   withAddToQueue: true,
+  withPlayNext: true,
   withPlayNow: true,
   withAddToFavorites: true,
   withAddToDownloads: true,
   withDeleteButton: false
 };
 
-function mapStateToProps (state, { track }) {
+function mapStateToProps(state, { track }) {
   return {
     streamProviders: track.local
       ? state.plugin.plugins.streamProviders.filter(({ sourceName }) => {
@@ -175,7 +180,7 @@ function mapStateToProps (state, { track }) {
   };
 }
 
-function mapDispatchToProps (dispatch) {
+function mapDispatchToProps(dispatch) {
   return {
     actions: bindActionCreators(
       QueueActions,

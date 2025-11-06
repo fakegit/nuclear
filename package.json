@@ -1,6 +1,6 @@
 {
   "name": "nuclear",
-  "version": "0.6.12",
+  "version": "0.6.48",
   "description": "Streaming music player that finds music sources automatically.",
   "repository": {
     "type": "git",
@@ -12,8 +12,7 @@
     "youtube"
   ],
   "author": {
-    "name": "nukeop",
-    "email": "nuclear@gumblert.tech"
+    "name": "nukeop <12746779+nukeop@users.noreply.github.com>"
   },
   "license": "AGPL-3.0",
   "bugs": {
@@ -21,48 +20,47 @@
   },
   "homepage": "https://github.com/nukeop/nuclear#readme",
   "scripts": {
-    "postinstall": "lerna bootstrap --hoist --no-ci && electron-builder install-app-deps && electron-rebuild",
-    "start": "lerna run start --stream",
+    "postinstall": "electron-builder install-app-deps && lerna run build --scope @nuclear/scanner",
+    "start": "lerna run start --stream --parallel",
     "build": "shx rm -rf dist && lerna run build && npm run pack",
-    "test": "lerna run build && lerna run test",
+    "test": "lerna run test",
+    "coverage": "lerna run coverage",
     "lint": "lerna run lint",
+    "lint:fix": "lerna run lint:fix",
     "storybook": "lerna run storybook",
-    "docker": "docker run --rm --net=host --env=\"DISPLAY\" --volume=\"$HOME/.Xauthority:/root/.Xauthority:rw\" --device /dev/snd nuclear",
-    "build:docker": "docker build -t nuclear .",
     "pack": "cross-env NODE_OPTIONS='--max-old-space-size=8192' electron-builder --dir -c.extraMetadata.main=dist/main.js",
-    "build:linux": "lerna run build && cross-env NODE_OPTIONS='--max-old-space-size=8192' electron-builder -c.extraMetadata.main=dist/main.js --linux --publish onTag",
+    "build:linux": "lerna run build && electron-builder -c.extraMetadata.main=dist/main.js --linux --publish onTag",
     "build:windows": "lerna run build && cross-env NODE_OPTIONS='--max-old-space-size=8192' electron-builder -c.extraMetadata.main=dist/main.js --windows --publish onTag",
-    "build:macos": "lerna run build && cross-env NODE_OPTIONS='--max-old-space-size=8192' electron-builder -c.extraMetadata.main=dist/main.js --macos --publish onTag",
+    "build:macos": "lerna run build && lerna run build-macos && cross-env NODE_OPTIONS='--max-old-space-size=8192' electron-builder -c.extraMetadata.main=dist/main.js --macos --x64 --publish onTag",
+    "build:macos-arm64": "lerna run build && lerna run build-macos-arm64 && cross-env NODE_OPTIONS='--max-old-space-size=8192' electron-builder -c.extraMetadata.main=dist/main.js --macos --arm64 --publish onTag",
     "build:all": "lerna run build && cross-env NODE_OPTIONS='--max-old-space-size=8192' electron-builder -c.extraMetadata.main=dist/main.js -mwl"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^2.13.0",
-    "@typescript-eslint/parser": "^2.34.0",
+    "@typescript-eslint/eslint-plugin": "^4.33.0",
+    "@typescript-eslint/parser": "^4.33.0",
     "babel-eslint": "^10.0.3",
-    "cross-env": "^7.0.2",
-    "electron": "^10.1.3",
-    "electron-builder": "^22.8.1",
-    "electron-rebuild": "^2.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
     "eslint": "^7.18.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-react": "^7.12.4",
-    "eslint-plugin-react-hooks": "^1.6.1",
     "husky": "^3.1.0",
-    "lerna": "^3.22.1",
+    "lerna": "^7.3.1",
     "lint-staged": "^10.0.0-beta.14",
-    "shx": "^0.3.2",
-    "typescript": "^3.9.7"
+    "shx": "^0.3.3",
+    "typescript": "^4.2.4"
   },
   "optionalDependencies": {
     "7zip-bin-mac": "^1.0.1"
   },
   "engines": {
-    "node": ">=12.14.0",
-    "npm": ">=6.0.0"
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged && lerna run i18n-sync && git add docs/i18n.md"
+      "pre-commit": "lint-staged"
     }
   },
   "lint-staged": {
@@ -71,10 +69,13 @@
     "*.ts": "eslint --fix",
     "*.tsx": "eslint --fix"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "build": {
     "appId": "nuclear",
     "productName": "nuclear",
-    "artifactName": "${productName}-${env.GITHASH}.${ext}",
+    "artifactName": "${productName}-v${env.VERSION}-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -98,7 +99,7 @@
       }
     ],
     "releaseInfo": {
-      "releaseName": "Nuclear ${env.GITHASH}"
+      "releaseName": "Nuclear ${env.VERSION}"
     },
     "fileAssociations": [
       {
@@ -118,32 +119,12 @@
         "mimeType": "audio/ogg"
       },
       {
-        "ext": "aac",
-        "mimeType": "audio/aac"
-      },
-      {
         "ext": "flac",
         "mimeType": "audio/flac"
       },
       {
-        "ext": "wav",
-        "mimeType": "audio/x-wav"
-      },
-      {
-        "ext": "m4a",
-        "mimeType": "audio/m4a"
-      },
-      {
-        "ext": "weba",
-        "mimeType": "audio/weba"
-      },
-      {
         "ext": "mp4",
         "mimeType": "audio/mp4"
-      },
-      {
-        "ext": "webm",
-        "mimeType": "audio/webm"
       }
     ],
     "linux": {
@@ -170,11 +151,10 @@
           ]
         },
         {
-          "from": "node_modules/sqlite3",
-          "to": "resources/node_modules/sqlite3",
+          "from": "node_modules/ffmpeg-static",
+          "to": "resources/bin",
           "filter": [
-            "package.json",
-            "lib/*"
+            "ffmpeg"
           ]
         }
       ]
@@ -182,10 +162,11 @@
     "mac": {
       "category": "public.app-category.music",
       "target": [
-        "zip",
-        "pkg",
-        "dmg"
+        {
+          "target": "dmg"
+        }
       ],
+      "mergeASARs": true,
       "extraFiles": [
         {
           "from": "packages/main/bin/mac",
@@ -195,11 +176,10 @@
           ]
         },
         {
-          "from": "node_modules/sqlite3",
-          "to": "Resources/node_modules/sqlite3",
+          "from": "node_modules/ffmpeg-static",
+          "to": "resources/bin",
           "filter": [
-            "package.json",
-            "lib/*"
+            "ffmpeg"
           ]
         }
       ]
@@ -218,20 +198,19 @@
           ]
         },
         {
-          "from": "node_modules/sqlite3",
-          "to": "resources/node_modules/sqlite3",
+          "from": "node_modules/ffmpeg-static",
+          "to": "resources/bin",
           "filter": [
-            "package.json",
-            "lib/*"
+            "ffmpeg.exe"
           ]
         }
       ]
     },
     "nsis": {
-      "artifactName": "${productName} Setup ${env.GITHASH}.${ext}"
+      "artifactName": "${productName} Setup ${env.VERSION}.${ext}"
     }
   },
   "dependencies": {
-    "sqlite3": "^4.2.0"
+    "sqlite3": "^5.1.6"
   }
 }

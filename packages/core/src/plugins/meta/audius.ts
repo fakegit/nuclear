@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import _ from 'lodash';
 
 import MetaProvider from '../metaProvider';
@@ -12,16 +11,15 @@ import {
   ArtistDetails,
   AlbumDetails
 } from '../plugins.types';
-import {
-  AudiusArtistSearchResponse,
-  AudiusArtistInfo,
-  AudiusArtistSearchResult
-} from '../../rest/Audius.types';
+import { AudiusArtistSearchResponse, AudiusArtistInfo, AudiusArtistSearchResult } from '../../rest/Audius.types';
 import { LastFmArtistInfo } from '../../rest/Lastfm.types';
 import { cleanName } from '../../structs/Artist';
+import SimilarArtistsService from './SimilarArtistsService';
 
 class AudiusMetaProvider extends MetaProvider {
   lastfm: LastFmApi;
+  readonly similarArtistsService: SimilarArtistsService = new SimilarArtistsService();
+
   constructor() {
     super();
     this.name = 'Audius Meta Provider';
@@ -82,6 +80,7 @@ class AudiusMetaProvider extends MetaProvider {
 
     const lastFmInfo: LastFmArtistInfo = (await (await this.lastfm.getArtistInfo(AudiusInfo.name)).json()).artist;
     const hasLastFmArtist = typeof(lastFmInfo) !== 'undefined';
+    const similarArtists = await this.similarArtistsService.createSimilarArtists(lastFmInfo);
     const ArtistTracks = (await ((await Audius.getArtistTracks(this.apiEndpoint, artistId)).json())).data;
 
     const coverImage = AudiusInfo.cover_photo ? AudiusInfo.cover_photo['640x'] : '';
@@ -95,7 +94,7 @@ class AudiusMetaProvider extends MetaProvider {
       onTour: hasLastFmArtist ? lastFmInfo.ontour === '1' : false,
       coverImage,
       thumb,
-      images: [],
+      images: [coverImage, thumb],
       topTracks: _.map(ArtistTracks, (track) => ({
         name: track.title,
         title: track.title,
@@ -104,10 +103,7 @@ class AudiusMetaProvider extends MetaProvider {
         listeners: track.listeners,
         artist: { name: AudiusInfo.name }
       })),
-      similar: hasLastFmArtist ? _.map(lastFmInfo.similar.artist, artist => ({
-        name: artist.name,
-        thumbnail: _.get(_.find(artist.image, { size: 'large' }), '#text')
-      })) : [],
+      similar: similarArtists,
       source: SearchResultsSource.Audius
     });
   }
@@ -128,7 +124,6 @@ class AudiusMetaProvider extends MetaProvider {
   async fetchAlbumDetails(): Promise<AlbumDetails> {
     throw new Error('Method not implemented.');
   }
-
 
   async fetchAlbumDetailsByName(): Promise<AlbumDetails> {
     throw new Error('Method not implemented.');

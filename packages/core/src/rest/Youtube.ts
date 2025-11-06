@@ -1,19 +1,21 @@
-import _ from 'lodash';
-import getArtistTitle from 'get-artist-title';
-import ytdl from 'ytdl-core';
-import ytlist from 'youtube-playlist';
-import ytsr from 'ytsr';
+import { logger } from '../../';
+import ytdl from '@nuclearplayer/ytdl-core';
+import ytpl from '@distube/ytpl';
 
-import LastFmApi from './Lastfm';
-import { StreamQuery } from '../plugins/plugins.types';
+import { StreamData, StreamQuery } from '../plugins/plugins.types';
 import * as SponsorBlock from './SponsorBlock';
+import { YoutubeHeuristics } from './heuristics';
+import ytsr, { Video } from '@distube/ytsr';
 
-const lastfm = new LastFmApi(
-  process.env.LAST_FM_API_KEY,
-  process.env.LAST_FM_API_SECRET
-);
+export type YoutubeResult = {
+  streams: { source: string, id: string }[]
+  name: string
+  thumbnail: string
+  artist: string | { name: string }
+}
 
 const baseUrl = 'http://www.youtube.com/watch?v=';
+const agent = ytdl.createAgent();
 
 function isValidURL(str) {
   const pattern = new RegExp('^(https?:\\/\\/)' + // protocol
@@ -44,57 +46,59 @@ function analyseUrlType(url) {
   return analysisResult;
 }
 
-function getTrackFromTitle(title) {
-  const result = getArtistTitle(title);
-  if (result) {
-    return lastfm.searchTracks(result[0] + ' ' + result[1], 1)
-      .then(tracks => tracks.json())
-      .then(tracksJson => {
-        return new Promise((resolve) => {
-          resolve(tracksJson.results.trackmatches.track[0]);
-        });
-      });
-  } else {
-    return new Promise((resolve) => {
-      resolve({});
-    });
+function formatPlaylistTrack(track: ytpl.result['items'][0]): YoutubeResult {
+  return {
+    streams: [{ source: 'Youtube', id: track.id }],
+    name: track.title,
+    thumbnail: track.thumbnail,
+    artist: track.author.name
+  };
+}
+
+export async function handleYoutubePlaylist(url: string): Promise<YoutubeResult[]> {
+  try {
+    const playlistID = await ytpl.getPlaylistID(url);
+    if (ytpl.validateID(playlistID)) {
+      const playlistResult = await ytpl(playlistID);
+      const allTracks = playlistResult.items;
+
+      return allTracks.map(formatPlaylistTrack);
+    }
+    return [];
+
+  } catch (e) {
+    logger.error('youtube fetch playlist error');
+    logger.error(e);
+    return [];
+  }
+
+}
+
+async function handleYoutubeVideo(url: string): Promise<YoutubeResult[]> {
+  try {
+    const info = await ytdl.getInfo(url, { agent });
+    if (info.videoDetails) {
+      const videoDetails = info.videoDetails;
+    
+      return [{
+        streams: [{ source: 'Youtube', id: videoDetails.videoId }],
+        name: videoDetails.title,
+        thumbnail: getLargestThumbnail(videoDetails.thumbnails),
+        artist: { name: videoDetails.ownerChannelName }
+      }];
+    }
+    return [];
+  } catch (e) {
+    return [];
   }
 }
 
-function handleYoutubePlaylist(url) {
-  return ytlist(url, 'name')
-    .then(res => {
-      const allTracks = res.data.playlist.map((elt) => {
-        return getTrackFromTitle(elt);
-      });
-      return Promise.all(allTracks);
-    })
-    .catch(function () {
-      return new Promise((resolve) => {
-        resolve([]);
-      });
-    });
-}
-
-function handleYoutubeVideo(url) {
-  return ytdl.getInfo(url)
-    .then(info => {
-      return getTrackFromTitle(info.videoDetails.title)
-        .then(track => {
-          return [track];
-        });
-    })
-    .catch(function () {
-      return Promise.resolve([]);
-    });
-}
-
-export function urlSearch(url) {
+export async function urlSearch(url: string): Promise<YoutubeResult[]> {
   const urlAnalysis = analyseUrlType(url);
   if (urlAnalysis.isYoutubePlaylist) {
-    return handleYoutubePlaylist(url);
+    return await handleYoutubePlaylist(url);
   } else if (urlAnalysis.isYoutubeVideo) {
-    return handleYoutubeVideo(url);
+    return await handleYoutubeVideo(url);
   } else {
     return new Promise((resolve) => {
       resolve([]);
@@ -102,37 +106,95 @@ export function urlSearch(url) {
   }
 }
 
-export async function trackSearch(query: StreamQuery, omitStreamId?: string, sourceName?: string) {
-  const terms = query.artist + ' ' + query.track;
-  return trackSearchByString(terms, omitStreamId, sourceName);
+export async function liveStreamSearch(query: string): Promise<YoutubeResult[]> {
+  if (isValidURL(query)) {
+    return [];
+  }
+
+  const searchResults = await ytsr(query, { safeSearch: false, limit: 10 });
+
+  return searchResults.items
+    .filter(item => item.isLive)
+    .map((video: ytsr.Video) => ({
+      streams: [{ source: 'Youtube', id: video.id }],
+      name: video.name,
+      thumbnail: video.thumbnail,
+      artist: { name: video.author.name }
+    }));
 }
 
-export async function trackSearchByString(query: string, omitStreamId?: string, sourceName?: string) {
-  const filterOptions = await ytsr.getFilters(query);
-  const filterVideoOnly = filterOptions.get('Type').get('Video'); 
-  const results = await ytsr(filterVideoOnly.url, { limit: omitStreamId ? 15 : 1 });
-  const topTrack: ytsr.Video = _.find(
-    results.items as ytsr.Video[],
-    item => (!omitStreamId || item.id !== omitStreamId)
-  ) as ytsr.Video;
-  const topTrackInfo = await ytdl.getInfo(topTrack.url);
-  const formatInfo = ytdl.chooseFormat(topTrackInfo.formats, { quality: 'highestaudio' });
-  const segments = await SponsorBlock.getSegments(topTrack.id);
+export async function trackSearch(query: StreamQuery, sourceName?: string) {
+  return trackSearchByString(query, sourceName);
+}
+
+export async function trackSearchByString(query: StreamQuery, sourceName?: string, useSponsorBlock = true): Promise<StreamData[]> {
+  const terms = query.artist + ' ' + query.track;
+
+  const tracks = (await ytsr(terms, { safeSearch: false, type: 'video', limit: 10 })).items.filter((item) => item.isLive === false);
+
+  const heuristics = new YoutubeHeuristics();
+
+  const orderedTracks = heuristics.orderTracks({
+    tracks,
+    artist: query.artist,
+    title: query.track
+  });
+
+  return orderedTracks
+    .map((track) => videoToStreamData(track as Video, sourceName));
+}
+
+export const getStreamForId = async (id: string, sourceName: string, useSponsorBlock = true): Promise<StreamData> => {
+  try {
+    const videoUrl = baseUrl + id;
+    const trackInfo = await ytdl.getInfo(videoUrl, { agent });
+    const formatInfo = ytdl.chooseFormat(trackInfo.formats, { quality: 'highestaudio' });
+    const segments = useSponsorBlock ? await SponsorBlock.getSegments(id) : [];
+
+    return {
+      id,
+      source: sourceName,
+      stream: formatInfo.url,
+      duration: parseInt(trackInfo.videoDetails.lengthSeconds),
+      title: trackInfo.videoDetails.title,
+      thumbnail: getLargestThumbnail(trackInfo.videoDetails.thumbnails),
+      format: formatInfo.container,
+      skipSegments: segments,
+      originalUrl: videoUrl,
+      isLive: formatInfo.isLive,
+      author: {
+        name: trackInfo.videoDetails.author.name,
+        thumbnail: getLargestThumbnail(trackInfo.videoDetails.author.thumbnails)
+      }
+    };
+  } catch (e) {
+    logger.error('Yotube - getStreamForId error');
+    logger.error(e);
+    throw new Error(`Could not find a Youtube track with ${id}`);
+  }
+};
+
+function videoToStreamData(video: Video, source: string): StreamData {
   return {
-    source: sourceName,
-    id: topTrack.id,
-    stream: formatInfo.url,
-    duration: parseInt(topTrackInfo.videoDetails.lengthSeconds),
-    title: topTrackInfo.videoDetails.title,
-    thumbnail: topTrack.bestThumbnail.url,
-    format: formatInfo.container,
-    skipSegments: segments
+    source,
+    id: video.id,
+    stream: undefined,
+    duration: parseInt(video.duration),
+    title: video.name,
+    thumbnail: getLargestThumbnail(video.thumbnails),
+    originalUrl: video.url,
+    author: {
+      name: video.author.name,
+      thumbnail: getLargestThumbnail(video.thumbnails)
+    }
   };
 }
 
-export const getStreamForId = async (id: string) => {
-  const videoUrl = baseUrl + id;
-  const trackInfo = await ytdl.getInfo(videoUrl);
-  const formatInfo = ytdl.chooseFormat(trackInfo.formats, { quality: 'highestaudio' });
-  return formatInfo.url;
+const getLargestThumbnail = (thumbnails: ytdl.thumbnail[]): string => {
+  const isNotEmpty = thumbnails.length > 0;
+  const largestThumbnail = isNotEmpty && thumbnails.reduce((prev, current) => {
+    return (prev.height * prev.width) > (current.height * current.width) ? prev : current;
+  });
+
+  return largestThumbnail?.url;
 };

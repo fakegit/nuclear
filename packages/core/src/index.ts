@@ -3,7 +3,6 @@ import 'isomorphic-fetch';
 export * from './settings';
 export * from './types';
 export * from './util';
-export { transformSource, transformPluginFile } from './plugins/transform';
 
 export { default as Plugin } from './plugins/plugin';
 export { default as LyricsProvider } from './plugins/lyricsProvider';
@@ -23,3 +22,7 @@ export { default as Track } from './structs/Track';
 export { default as IpcEvents } from './ipc/events';
 
 export * from './helpers';
+export * from './types';
+
+export { default as logger } from './logger/nuclear-logger';
+export { retryWithExponentialBackoff } from './util/retry';

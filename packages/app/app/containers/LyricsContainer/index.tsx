@@ -7,15 +7,15 @@ import { lyricsSelectors } from '../../selectors/lyrics';
 import { queue as queueSelector } from '../../selectors/queue';
 
 const LyricsContainer = () => {
-  const lyricsSearchResults = useSelector(lyricsSelectors.lyricsSearchResults);
+  const lyricsSearchResult = useSelector(lyricsSelectors.lyricsSearchResult);
   const queue = useSelector(queueSelector);
 
   return <LyricsView
     track={_.get(
       queue.queueItems,
-      queue.currentSong
+      queue.currentTrack
     )}
-    lyricsSearchResults={lyricsSearchResults as { type: string }}
+    lyricsSearchResult={lyricsSearchResult}
   />;
 };
 

@@ -1,6 +1,7 @@
 import { Bandcamp } from '../../rest';
 import { BandcampSearchResult } from '../../rest/Bandcamp';
 import { StreamQuery, StreamData } from '../plugins.types';
+import { logger } from '../../';
 import StreamProviderPlugin from '../streamProvider';
 
 class BandcampPlugin extends StreamProviderPlugin {
@@ -13,21 +14,37 @@ class BandcampPlugin extends StreamProviderPlugin {
     this.isDefault = false;
   }
 
-  async findTrackUrl(query: StreamQuery): Promise<BandcampSearchResult> {
+  async findTrackUrls(query: StreamQuery): Promise<BandcampSearchResult[]> {
     const limit = 5;
-    let track: BandcampSearchResult;
+    let tracks: BandcampSearchResult[];
 
+    const searchTerm: string = this.createSearchTerm(query);
+    const isMatchingTrack = this.createTrackMatcher(query);
     for (let page = 0; page < limit; page++) {
-      const searchResults = await Bandcamp.search(query.track, page);
-      track = searchResults.find(item =>
-        item.type === 'track' &&
-        item.artist.toLowerCase() === query.artist.toLowerCase()
-      );
-      if (track) {
+      const searchResults = await Bandcamp.search(searchTerm, page);
+      tracks = searchResults.filter(isMatchingTrack);
+      if (tracks.length > 0) {
         break;
       }
     }
-    return track;
+    return tracks;
+  }
+
+  createSearchTerm(query: StreamQuery): string {
+    return `${query.artist} ${query.track}`;
+  }
+
+  createTrackMatcher(query: StreamQuery): (item: BandcampSearchResult) => boolean {
+    const normalizedTrack: string = this.normalizeForMatching(query.track);
+    const normalizedArtist: string = this.normalizeForMatching(query.artist);
+    return (searchResult) =>
+      searchResult.type === 'track' &&
+      this.normalizeForMatching(searchResult.artist) === normalizedArtist &&
+      this.normalizeForMatching(searchResult.name) === normalizedTrack;
+  }
+
+  normalizeForMatching(term: string): string {
+    return term.trim().toLowerCase();
   }
 
   resultToStream(result: BandcampSearchResult, stream: string, duration: number): StreamData {
@@ -37,18 +54,35 @@ class BandcampPlugin extends StreamProviderPlugin {
       stream,
       duration,
       title: result.name,
-      thumbnail: result.imageUrl
+      thumbnail: result.imageUrl,
+      originalUrl: result.url
     };
   }
 
-  async search(query: StreamQuery): Promise<void | StreamData> {
-    const track = await this.findTrackUrl(query);
-    const { stream, duration } = await Bandcamp.getTrackData(track.url);
-    return this.resultToStream(track, stream, duration);
+  async search(query: StreamQuery): Promise<undefined | StreamData[]> {
+    try {
+      const tracks = await this.findTrackUrls(query);
+
+      return Promise.all(tracks.map(async track => {
+        const { stream, duration } = await Bandcamp.getTrackData(track.url);
+        return this.resultToStream(track, stream, duration);
+      }));
+    } catch (error) {
+      logger.error(`Error while searching  for ${query.artist + ' ' + query.track} on Bandcamp`);
+      logger.error(error);
+    }
   }
 
-  async getAlternateStream(query: StreamQuery): Promise<void | StreamData> {
-    return this.search(query);
+  async getStreamForId(id: string): Promise<undefined | StreamData> {
+    try {
+      const trackUrl = atob(id);
+      const track = await Bandcamp.getTrackData(trackUrl);
+
+      return this.resultToStream(track, track.stream, track.duration);
+    } catch (error) {
+      logger.error(`Error while searching id: ${id} on Bandcamp`);
+      logger.error(error);
+    }
   }
 }
 
